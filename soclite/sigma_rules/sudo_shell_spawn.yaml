@@ -1,0 +1,26 @@
+title: Sudo Shell Spawned — Privilege Escalation
+id: 2d8a6c14-e5b9-4f3c-9a7d-1b4e6c8f2a0d
+status: stable
+description: >
+  Detects use of sudo to spawn an interactive shell (bash/sh/zsh).
+  This technique is used for privilege escalation to gain persistent root access.
+author: SOC-Lite
+tags:
+  - attack.privilege_escalation
+  - attack.t1548.003
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "COMMAND=/bin/bash"
+    - "COMMAND=/bin/sh"
+    - "COMMAND=/usr/bin/bash"
+    - "COMMAND=su -"
+    - "COMMAND=/bin/zsh"
+  condition: keywords
+level: high
+falsepositives:
+  - System administrators performing legitimate maintenance
+references:
+  - https://attack.mitre.org/techniques/T1548/003/

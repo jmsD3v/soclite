@@ -1,0 +1,23 @@
+title: SSH Maximum Authentication Attempts Exceeded
+id: 3f7c9e25-d1a8-4b6f-c2e0-8a5d3f7b9c1e
+status: stable
+description: >
+  Detects when SSH rejects a connection due to too many failed authentication
+  attempts. Indicates active brute force or automated credential stuffing.
+author: SOC-Lite
+tags:
+  - attack.credential_access
+  - attack.t1110
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "maximum authentication attempts exceeded"
+    - "Too many authentication failures"
+  condition: keywords
+level: high
+falsepositives:
+  - SSH clients with many configured keys
+references:
+  - https://attack.mitre.org/techniques/T1110/001/

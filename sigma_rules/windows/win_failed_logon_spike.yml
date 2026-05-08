@@ -1,0 +1,19 @@
+title: Windows Failed Logon Spike
+id: win-failed-logon-001
+status: stable
+description: Multiple Windows failed logon events (4625) in a short time window. Indicates brute force or credential stuffing against a Windows host.
+level: high
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4625
+  condition: selection | count() > 10
+tags:
+  - attack.credential_access
+  - attack.t1110
+  - attack.t1110.003
+references:
+  - https://attack.mitre.org/techniques/T1110/003/
+  - https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-4625

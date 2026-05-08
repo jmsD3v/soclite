@@ -1,0 +1,24 @@
+title: New Account with UID 0 (Root Equivalent)
+id: 5e9b1d37-c6f2-4a8e-b3c5-7d0f2e4a8b1c
+status: stable
+description: >
+  Detects creation of a user account with UID 0, which grants root-equivalent
+  privileges. This is a classic persistence technique for maintaining hidden root access.
+author: SOC-Lite
+tags:
+  - attack.persistence
+  - attack.t1136
+  - attack.t1078.003
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "UID=0"
+    - "uid=0"
+  condition: keywords
+level: critical
+falsepositives:
+  - Almost none — UID=0 for non-root accounts is always suspicious
+references:
+  - https://attack.mitre.org/techniques/T1136/001/

@@ -1,0 +1,19 @@
+title: Windows Audit Log Cleared
+id: win-audit-clear-001
+status: stable
+description: The Windows Security audit log was cleared (Event ID 1102). This is a defense evasion technique used by attackers to remove evidence of their activity.
+level: critical
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 1102
+  condition: selection
+tags:
+  - attack.defense_evasion
+  - attack.t1070
+  - attack.t1070.001
+references:
+  - https://attack.mitre.org/techniques/T1070/001/
+  - https://docs.microsoft.com/en-us/windows/security/threat-protection/auditing/event-1102

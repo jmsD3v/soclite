@@ -1,0 +1,19 @@
+title: Scheduled Task Created — Persistence Mechanism
+id: win-schtask-001
+status: stable
+description: A scheduled task was created (Event ID 4698). Attackers commonly use scheduled tasks for persistence and privilege escalation.
+level: medium
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4698
+  condition: selection
+tags:
+  - attack.persistence
+  - attack.t1053
+  - attack.t1053.005
+  - attack.privilege_escalation
+references:
+  - https://attack.mitre.org/techniques/T1053/005/

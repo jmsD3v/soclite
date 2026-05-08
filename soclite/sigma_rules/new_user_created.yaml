@@ -1,0 +1,26 @@
+title: New Local User Account Created
+id: 9c3f5e27-b4d1-4a7c-8b2e-3c8f1d5a7b9e
+status: stable
+description: >
+  Detects creation of a new local user account. Attackers create backdoor
+  accounts to maintain persistent access after initial compromise.
+author: SOC-Lite
+tags:
+  - attack.persistence
+  - attack.t1136
+  - attack.t1136.001
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "new user:"
+    - "useradd"
+    - "new group:"
+  condition: keywords
+level: medium
+falsepositives:
+  - Legitimate user provisioning
+  - Automated account creation scripts
+references:
+  - https://attack.mitre.org/techniques/T1136/

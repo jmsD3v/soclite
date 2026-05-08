@@ -1,0 +1,27 @@
+title: Sudo Privilege Escalation to Root
+id: sudo-root-001
+status: stable
+description: A user executed a command as root via sudo. Common in post-exploitation for privilege escalation.
+level: medium
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    tags|contains: sudo
+    command_line|contains:
+      - '/bin/bash'
+      - '/bin/sh'
+      - '/usr/bin/python'
+      - 'chmod'
+      - 'chown'
+      - 'passwd'
+      - 'visudo'
+      - 'crontab'
+  condition: selection
+tags:
+  - attack.privilege_escalation
+  - attack.t1548
+  - attack.t1548.003
+references:
+  - https://attack.mitre.org/techniques/T1548/003/

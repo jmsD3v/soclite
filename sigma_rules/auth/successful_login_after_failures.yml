@@ -1,0 +1,20 @@
+title: Successful Login After Multiple Failures
+id: login-after-failures-001
+status: stable
+description: A successful authentication occurred on a host that recently had multiple failed attempts. Possible successful brute force.
+level: high
+logsource:
+  product: linux
+  service: auth
+detection:
+  selection:
+    status: success
+    tags|contains: ssh_success
+  condition: selection
+tags:
+  - attack.credential_access
+  - attack.t1110
+  - attack.initial_access
+  - attack.t1078
+references:
+  - https://attack.mitre.org/techniques/T1078/

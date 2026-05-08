@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "soclite"
+version = "0.1.0"
+description = "AI-powered lightweight SIEM with Sigma rules and ML anomaly detection"
+requires-python = ">=3.11"
+dependencies = [
+    "google-generativeai>=0.5",
+    "typer>=0.12.0",
+    "rich>=13.7.0",
+    "python-evtx>=0.8.0",
+    "scikit-learn>=1.4.0",
+    "numpy>=1.26.0",
+    "pyyaml>=6.0.1",
+    "python-dotenv>=1.0.0",
+    "watchdog>=4.0.0",
+]
+
+[project.scripts]
+soclite = "soclite.cli.main:app"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["soclite*"]

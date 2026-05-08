@@ -1,0 +1,27 @@
+title: SSH Brute Force Attack
+id: 4a7c3d21-b2f1-4e8a-9c0d-5f8e2a1b3c4d
+status: stable
+description: >
+  Detects multiple SSH authentication failures from the same source,
+  indicating a brute force or credential stuffing attack.
+author: SOC-Lite
+date: 2024/01/01
+tags:
+  - attack.credential_access
+  - attack.t1110
+  - attack.t1110.001
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "Failed password"
+    - "authentication failure"
+    - "Invalid user"
+  condition: keywords
+level: medium
+falsepositives:
+  - Misconfigured automation scripts
+  - Legitimate users forgetting passwords
+references:
+  - https://attack.mitre.org/techniques/T1110/

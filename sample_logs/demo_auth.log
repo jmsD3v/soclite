@@ -1,0 +1,19 @@
+Jun 15 02:30:01 webserver01 sshd[1234]: Failed password for admin from 185.220.101.42 port 55001 ssh2
+Jun 15 02:30:04 webserver01 sshd[1234]: Failed password for root from 185.220.101.42 port 55002 ssh2
+Jun 15 02:30:07 webserver01 sshd[1234]: Failed password for ubuntu from 185.220.101.42 port 55003 ssh2
+Jun 15 02:30:10 webserver01 sshd[1234]: Failed password for deploy from 185.220.101.42 port 55004 ssh2
+Jun 15 02:30:13 webserver01 sshd[1234]: Failed password for backup from 185.220.101.42 port 55005 ssh2
+Jun 15 02:30:16 webserver01 sshd[1234]: Failed password for test from 185.220.101.42 port 55006 ssh2
+Jun 15 02:30:19 webserver01 sshd[1234]: Failed password for admin from 185.220.101.42 port 55007 ssh2
+Jun 15 02:30:22 webserver01 sshd[1234]: Failed password for root from 185.220.101.42 port 55008 ssh2
+Jun 15 02:30:25 webserver01 sshd[1234]: Failed password for oracle from 185.220.101.42 port 55009 ssh2
+Jun 15 02:30:28 webserver01 sshd[1234]: Failed password for postgres from 185.220.101.42 port 55010 ssh2
+Jun 15 02:30:31 webserver01 sshd[1234]: Failed password for ftpuser from 185.220.101.42 port 55011 ssh2
+Jun 15 02:30:34 webserver01 sshd[1234]: Failed password for user from 185.220.101.42 port 55012 ssh2
+Jun 15 02:31:10 webserver01 sshd[1234]: Accepted password for deploy from 185.220.101.42 port 55999 ssh2
+Jun 15 02:31:30 webserver01 sudo: deploy : TTY=pts/0 ; PWD=/home/deploy ; USER=root ; COMMAND=/bin/bash
+Jun 15 02:31:45 webserver01 sudo: deploy : TTY=pts/0 ; PWD=/tmp ; USER=root ; COMMAND=/bin/chmod +x /tmp/backdoor.sh
+Jun 15 02:31:50 webserver01 sudo: deploy : TTY=pts/0 ; PWD=/tmp ; USER=root ; COMMAND=/tmp/backdoor.sh
+Jun 15 02:32:10 webserver01 sshd[1234]: Accepted password for root from 10.0.0.15 port 22
+Jun 15 02:32:30 webserver01 sshd[1234]: Accepted password for admin from 10.0.0.15 port 22
+Jun 15 02:33:00 webserver01 sudo: root : TTY=pts/1 ; PWD=/var/log ; USER=root ; COMMAND=/bin/rm -rf /var/log/auth.log

@@ -1,0 +1,29 @@
+title: Suspicious Process Execution — LOLBins
+id: win-lolbins-001
+status: stable
+description: Execution of known Living-off-the-Land binaries (LOLBins) that are abused for defense evasion, download, and execution. Includes certutil, mshta, regsvr32, wscript, bitsadmin.
+level: high
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4688
+    process_name|endswith:
+      - 'certutil.exe'
+      - 'mshta.exe'
+      - 'regsvr32.exe'
+      - 'wscript.exe'
+      - 'cscript.exe'
+      - 'bitsadmin.exe'
+      - 'rundll32.exe'
+      - 'msiexec.exe'
+  condition: selection
+tags:
+  - attack.defense_evasion
+  - attack.t1218
+  - attack.execution
+  - attack.t1059
+references:
+  - https://attack.mitre.org/techniques/T1218/
+  - https://lolbas-project.github.io/

@@ -1,0 +1,24 @@
+title: Direct Root SSH Login
+id: 7b2e4f18-a3c9-4d6b-8e1f-2a9c5d7b0e3f
+status: stable
+description: >
+  Detects successful SSH login as root. Direct root login is a significant
+  security risk and often indicates compromise or misconfigured security policy.
+author: SOC-Lite
+tags:
+  - attack.initial_access
+  - attack.t1078.003
+logsource:
+  product: linux
+  service: auth
+detection:
+  keywords:
+    - "Accepted password for root"
+    - "Accepted publickey for root"
+    - "session opened for user root"
+  condition: keywords
+level: high
+falsepositives:
+  - Systems with PermitRootLogin enabled (should be disabled)
+references:
+  - https://attack.mitre.org/techniques/T1078/003/
