@@ -268,6 +268,34 @@ def demo(
 
 
 @app.command()
+def report(
+    files: list[Path] = typer.Argument(..., help="Log files to analyze"),
+    output: Path = typer.Option(Path("soclite-report.html"), "--output", "-o"),
+    fmt: str = typer.Option("html", "--format", "-f", help="html or pdf"),
+    sigma_dir: Optional[Path] = typer.Option(None, "--sigma-dir"),
+    no_ai: bool = typer.Option(False, "--no-ai"),
+    no_ml: bool = typer.Option(False, "--no-ml"),
+) -> None:
+    """Run analysis and generate HTML/PDF report."""
+    _banner()
+    from soclite.core.pipeline import run_pipeline
+    from soclite.report.generator import generate_html, generate_pdf
+
+    result = asyncio.run(run_pipeline(
+        files=files, sigma_dir=sigma_dir,
+        use_ml=not no_ml, use_ai=not no_ai,
+    ))
+    _print_results(result)
+
+    if fmt == "pdf":
+        out = generate_pdf(result, output.with_suffix(".pdf"))
+    else:
+        out = generate_html(result, output.with_suffix(".html"))
+
+    console.print(f"\n[green]Report saved -> {out}[/green]")
+
+
+@app.command()
 def watch(
     directory: Path = typer.Argument(..., help="Directory to monitor for new log files."),
     sigma_dir: Optional[Path] = typer.Option(None, "--sigma-dir"),

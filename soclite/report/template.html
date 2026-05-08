@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SOC-Lite Security Report — {{ scan_time }}</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #30363d;
+    --text: #c9d1d9; --muted: #8b949e;
+    --red: #f85149; --orange: #d29922; --yellow: #e3b341;
+    --cyan: #58a6ff; --green: #3fb950; --purple: #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); font-size: 14px; }
+  .page { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  /* Header */
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 28px; }
+  .header h1 { font-size: 22px; font-weight: 700; color: var(--cyan); }
+  .header .meta { text-align: right; color: var(--muted); font-size: 12px; line-height: 1.6; }
+  /* Summary cards */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 32px; }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; text-align: center; }
+  .card .num { font-size: 32px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+  .card .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+  .card.critical .num { color: var(--red); }
+  .card.high .num { color: var(--orange); }
+  .card.medium .num { color: var(--yellow); }
+  .card.low .num { color: var(--cyan); }
+  .card.info .num { color: var(--muted); }
+  .card.incidents .num { color: var(--purple); }
+  .card.events .num { color: var(--green); }
+  /* Section headers */
+  h2 { font-size: 15px; font-weight: 600; color: var(--cyan); border-bottom: 1px solid var(--border); padding-bottom: 8px; margin-bottom: 16px; margin-top: 32px; }
+  /* Incidents */
+  .incident { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+  .incident-header { padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .incident-header h3 { font-size: 14px; font-weight: 600; }
+  .incident-body { padding: 14px 18px; }
+  .incident-ai { background: #0d1117; border-left: 3px solid var(--purple); padding: 10px 14px; font-size: 13px; line-height: 1.6; margin-top: 10px; border-radius: 0 4px 4px 0; white-space: pre-wrap; }
+  .recommend { margin-top: 10px; }
+  .recommend li { font-size: 12px; color: var(--muted); margin-left: 16px; margin-bottom: 3px; }
+  /* Alerts table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:hover td { background: var(--surface); }
+  /* Severity badges */
+  .sev { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+  .sev-critical { background: rgba(248,81,73,0.15); color: var(--red); border: 1px solid var(--red); }
+  .sev-high { background: rgba(210,153,34,0.15); color: var(--orange); border: 1px solid var(--orange); }
+  .sev-medium { background: rgba(227,179,65,0.15); color: var(--yellow); border: 1px solid var(--yellow); }
+  .sev-low { background: rgba(88,166,255,0.15); color: var(--cyan); border: 1px solid var(--cyan); }
+  .sev-info { background: rgba(139,148,158,0.1); color: var(--muted); border: 1px solid var(--border); }
+  /* MITRE tags */
+  .mitre { display: inline-block; background: rgba(188,140,255,0.1); color: var(--purple); border: 1px solid rgba(188,140,255,0.3); border-radius: 3px; font-size: 10px; padding: 1px 6px; margin: 1px 2px; }
+  /* Source tags */
+  .src-sigma { color: var(--green); font-size: 10px; }
+  .src-ml { color: var(--cyan); font-size: 10px; }
+  .src-threshold { color: var(--yellow); font-size: 10px; }
+  /* Meta info */
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 12px; color: var(--muted); }
+  .meta-grid span { color: var(--text); }
+  /* Footer */
+  .footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); text-align: center; font-size: 11px; color: var(--muted); }
+  /* No data */
+  .empty { color: var(--muted); font-size: 13px; padding: 16px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div>
+      <h1>SOC-Lite Security Analysis Report</h1>
+      <div style="margin-top:6px;color:var(--muted);font-size:13px;">
+        {{ source_files|join(', ') }}
+      </div>
+    </div>
+    <div class="meta">
+      <div>Generated: {{ scan_time }}</div>
+      <div>Duration: {{ duration }}</div>
+      <div>Events processed: {{ events_processed }}</div>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="cards">
+    <div class="card events">
+      <div class="num">{{ events_processed }}</div>
+      <div class="label">Events</div>
+    </div>
+    <div class="card critical">
+      <div class="num">{{ summary.critical }}</div>
+      <div class="label">Critical</div>
+    </div>
+    <div class="card high">
+      <div class="num">{{ summary.high }}</div>
+      <div class="label">High</div>
+    </div>
+    <div class="card medium">
+      <div class="num">{{ summary.medium }}</div>
+      <div class="label">Medium</div>
+    </div>
+    <div class="card low">
+      <div class="num">{{ summary.low }}</div>
+      <div class="label">Low</div>
+    </div>
+    <div class="card incidents">
+      <div class="num">{{ incidents|length }}</div>
+      <div class="label">Incidents</div>
+    </div>
+    <div class="card info">
+      <div class="num">{{ summary.total_alerts }}</div>
+      <div class="label">Total Alerts</div>
+    </div>
+  </div>
+
+  <!-- Incidents -->
+  {% if incidents %}
+  <h2>Incidents ({{ incidents|length }})</h2>
+  {% for inc in incidents %}
+  <div class="incident">
+    <div class="incident-header">
+      <h3>{{ inc.name }}</h3>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <span class="sev sev-{{ inc.severity }}">{{ inc.severity }}</span>
+        <span style="color:var(--muted);font-size:11px;">
+          {{ inc.first_seen }} — {{ inc.last_seen }}
+        </span>
+      </div>
+    </div>
+    <div class="incident-body">
+      <div class="meta-grid">
+        <div>Alerts: <span>{{ inc.alert_count }}</span></div>
+        <div>Status: <span>{{ inc.status }}</span></div>
+        {% if inc.affected_hosts %}
+        <div>Hosts: <span>{{ inc.affected_hosts|join(', ') }}</span></div>
+        {% endif %}
+        {% if inc.affected_users %}
+        <div>Users: <span>{{ inc.affected_users|join(', ') }}</span></div>
+        {% endif %}
+        {% if inc.source_ips %}
+        <div>Source IPs: <span>{{ inc.source_ips|join(', ') }}</span></div>
+        {% endif %}
+      </div>
+      {% if inc.ai_analysis %}
+      <div class="incident-ai">{{ inc.ai_analysis }}</div>
+      {% endif %}
+      {% if inc.recommendations %}
+      <div class="recommend"><ul>
+        {% for r in inc.recommendations %}<li>{{ r }}</li>{% endfor %}
+      </ul></div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Alerts table -->
+  <h2>All Alerts ({{ alerts|length }})</h2>
+  {% if alerts %}
+  <table>
+    <thead>
+      <tr>
+        <th>Severity</th>
+        <th>Rule</th>
+        <th>Source</th>
+        <th>Timestamp</th>
+        <th>Events</th>
+        <th>MITRE</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for a in alerts %}
+    <tr>
+      <td><span class="sev sev-{{ a.severity }}">{{ a.severity }}</span></td>
+      <td>{{ a.rule_name }}</td>
+      <td>
+        {% if a.rule_source == 'sigma' %}<span class="src-sigma">Sigma</span>
+        {% elif a.rule_source == 'ml_anomaly' %}<span class="src-ml">ML</span>
+        {% else %}<span class="src-threshold">Threshold</span>{% endif %}
+      </td>
+      <td style="white-space:nowrap;color:var(--muted);">{{ a.timestamp[:19] }}</td>
+      <td style="text-align:center;">{{ a.event_count }}</td>
+      <td>{% for t in a.mitre_techniques %}<span class="mitre">{{ t }}</span>{% endfor %}</td>
+      <td style="color:var(--muted);">{{ a.description[:120] }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="empty">No alerts generated.</p>
+  {% endif %}
+
+  <!-- Footer -->
+  <div class="footer">
+    SOC-Lite v{{ version }} &bull; Powered by Gemini AI &bull;
+    Copyright &copy; 2025 Desarrollado desde Las Brenas con amor por @jmsDev All rights reserved
+  </div>
+
+</div>
+</body>
+</html>

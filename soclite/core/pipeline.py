@@ -22,10 +22,12 @@ from rich.console import Console
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 from soclite.core.correlator import correlate
+from soclite.detection.threshold_detector import ThresholdDetector
 from soclite.detectors.ml_anomaly import MLAnomalyDetector
 from soclite.detectors.sigma import SigmaEngine, load_rules
 from soclite.ingestors.authlog import AuthLogIngestor
 from soclite.ingestors.evtx import EvtxIngestor
+from soclite.ingestors.jsonlog import JsonLogIngestor
 from soclite.types.events import Alert, ScanResult
 
 console = Console()
@@ -49,8 +51,9 @@ def _ingest(file_path: Path) -> list:
     log_type = _detect_log_type(file_path)
     if log_type == "evtx":
         return list(EvtxIngestor().parse(file_path))
-    else:
-        return list(AuthLogIngestor().parse(file_path))
+    if log_type == "json":
+        return list(JsonLogIngestor().parse(file_path))
+    return list(AuthLogIngestor().parse(file_path))
 
 
 def _dedup_alerts(alerts: list[Alert]) -> list[Alert]:
@@ -83,6 +86,7 @@ async def run_pipeline(
 
     sigma_engine = SigmaEngine(rules)
     ml_detector = MLAnomalyDetector(contamination=ml_contamination)
+    threshold_detector = ThresholdDetector()
 
     all_events = []
     all_alerts: list[Alert] = []
@@ -120,6 +124,13 @@ async def run_pipeline(
             progress.update(t_sigma, description=f"[green]Sigma — {len(sigma_alerts)} alerts", completed=1, total=1)
         else:
             console.print("[yellow]No Sigma rules found. Add .yml files to sigma_rules/[/yellow]")
+
+        # Threshold detection
+        t_thresh = progress.add_task("[cyan]Threshold rule detection...", total=None)
+        thresh_alerts = threshold_detector.detect(all_events)
+        thresh_alerts = _dedup_alerts(thresh_alerts)
+        all_alerts.extend(thresh_alerts)
+        progress.update(t_thresh, description=f"[green]Threshold — {len(thresh_alerts)} alerts", completed=1, total=1)
 
         # ML detection
         if use_ml and len(all_events) >= 20:
