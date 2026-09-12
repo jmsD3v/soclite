@@ -269,6 +269,6 @@ soclite analyze sample_logs/demo_auth.log --no-ai --output /tmp/out.json && pyth
 ## Footer obligatorio
 
 ```
-Copyright © 2025 Desarrollado desde Las Breñas con 💜 por @jmsDev All rights reserved
+Copyright © {año actual, calculado dinámicamente — nunca hardcodear} Desarrollado desde Las Breñas con 💜 por @jmsDev All rights reserved
 ```
 `@jmsDev` → https://www.linkedin.com/in/jmsilva83
