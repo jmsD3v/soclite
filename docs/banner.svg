@@ -1,0 +1,27 @@
+<svg width="1200" height="260" viewBox="0 0 1200 260" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="glow" cx="82%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.1"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="260" fill="#0d1117"/>
+  <rect width="1200" height="260" fill="url(#glow)"/>
+  <rect x="0" y="0" width="6" height="260" fill="url(#edge)"/>
+  <rect x="0" y="257" width="1200" height="3" fill="#22d3ee" fill-opacity="0.5"/>
+
+  <g transform="translate(0,0)"><polygon points="980,30 1070.0,90 1070.0,180.0 980,230 890.0,180.0 890.0,90" fill="none" stroke="#22d3ee" stroke-opacity="0.50" stroke-width="1.5"/><polygon points="980,48 1059.2,108 1059.2,174.6 980,212 900.8,174.6 900.8,108" fill="none" stroke="#22d3ee" stroke-opacity="0.32" stroke-width="1.5"/><polygon points="980,66 1048.4,126 1048.4,169.2 980,194 911.6,169.2 911.6,126" fill="none" stroke="#22d3ee" stroke-opacity="0.18" stroke-width="1.5"/><circle cx="840" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="875" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="910" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="945" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="980" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="1015" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="1050" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="1085" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/><circle cx="1120" cy="225" r="2" fill="#22d3ee" fill-opacity="0.4"/></g>
+
+  <rect x="56" y="52" width="72" height="28" rx="5" fill="#22d3ee" fill-opacity="0.15" stroke="#22d3ee" stroke-opacity="0.7"/>
+  <text x="92" y="70" font-family="JetBrains Mono, Consolas, monospace" font-size="14" font-weight="700" fill="#22d3ee" text-anchor="middle" dominant-baseline="middle">D-01</text>
+
+  <text x="56" y="140" font-family="JetBrains Mono, Consolas, monospace" font-size="52" font-weight="700" fill="#e6edf3">soclite</text>
+  <text x="56" y="178" font-family="JetBrains Mono, Consolas, monospace" font-size="19" fill="#8b949e">SIEM ligero potenciado por IA</text>
+
+  <text x="56" y="222" font-family="JetBrains Mono, Consolas, monospace" font-size="13" fill="#22d3ee" fill-opacity="0.65">jmsD3v // ciberseguridad</text>
+</svg>

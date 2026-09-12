@@ -1,5 +1,7 @@
 # SOC-Lite
 
+![banner](docs/banner.svg)
+
 SIEM liviano de línea de comandos (D-01) que combina reglas Sigma, detección por umbrales y un modelo de anomalías (Isolation Forest) para analizar logs de autenticación de Windows y Linux, y usa IA (Claude, Gemini u OpenAI, la que tengas configurada) para redactar el análisis de cada incidente en lenguaje natural.
 
 ## Qué hace
