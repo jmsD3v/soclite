@@ -1,231 +1,103 @@
-# 🛡️ SOC-Lite — AI-Powered Lightweight SIEM
+# SOC-Lite
 
-<div align="center">
+SIEM liviano de línea de comandos (D-01) que combina reglas Sigma, detección por umbrales y un modelo de anomalías (Isolation Forest) para analizar logs de autenticación de Windows y Linux, y usa Gemini para redactar el análisis de cada incidente en lenguaje natural.
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![SIEM](https://img.shields.io/badge/SIEM-Lightweight-0077b6?style=for-the-badge)
-![ML](https://img.shields.io/badge/ML-IsolationForest-ff6b6b?style=for-the-badge&logo=scikitlearn&logoColor=white)
-![Gemini](https://img.shields.io/badge/Gemini_AI-Free_Tier-4285F4?style=for-the-badge&logo=google&logoColor=white)
-![Portfolio](https://img.shields.io/badge/Portfolio-D--01_Defensive-0077b6?style=for-the-badge)
+## Qué hace
 
-**Log ingestion, Sigma rule detection, ML anomaly detection, and AI incident triage in a single CLI**
+SOC-Lite ingiere logs (`.evtx` de Windows, `auth.log`/`secure` de Linux, o JSON/JSONL de Docker/K8s/CloudTrail), los normaliza a un esquema común (`LogEvent`) y los corre en paralelo por tres motores de detección: un motor de reglas Sigma (subset propio del formato: `contains`, `startswith`, `endswith`, `contains|all`, `and`/`or`/`not`, `count()` por ventana de tiempo), un detector de umbrales hecho a mano (fuerza bruta, enumeración de cuentas, credential stuffing, movimiento lateral, logins fuera de horario, ráfagas de procesos, escalada de privilegios repetida) y un Isolation Forest de scikit-learn entrenado on-the-fly sobre 10 features por evento (hora del día, tipo de logon, IP privada/pública, proceso sospechoso, etc.). Las alertas resultantes se correlacionan en incidentes (mismo host/usuario/IP dentro de una ventana de 30 min) y, si hay una API key de Gemini configurada, cada incidente recibe un resumen narrativo (qué pasó, ruta de ataque probable, impacto, acciones recomendadas) generado por IA. Todo corre 100% local salvo la llamada a Gemini, que es opcional y se puede desactivar con `--no-ai`.
 
-*D-01 of 9 · Cybersecurity Portfolio by [@jmsDev](https://www.linkedin.com/in/jmsilva83)*
+## Características
 
-</div>
+- **3 capas de detección independientes**: Sigma (7 reglas incluidas, cubren SSH brute force, sudo-to-root, audit log limpiado, tareas programadas, LOLBins), umbrales determinísticos, y ML no supervisado (Isolation Forest).
+- **3 ingestores**: EVTX de Windows (parseo XML directo, sin dependencias de Windows), auth.log/syslog de Linux, JSON/JSONL genérico con auto-detección de campos (ECS, CloudTrail, Docker).
+- **Correlación de incidentes**: agrupa alertas relacionadas por host/usuario/IP compartido dentro de una ventana temporal en vez de mostrar una lista plana.
+- **Análisis con IA (Gemini 1.5 Flash)**: narrativa de incidente + recomendaciones accionables; se puede correr también por alerta individual (`--analyze-alerts`). Si no hay `GEMINI_API_KEY`, el análisis se omite con un mensaje claro (no rompe el pipeline).
+- **Reportes HTML** (vía Jinja2) y PDF opcional (vía WeasyPrint, si está instalado).
+- **Modo `watch`**: monitorea un directorio y analiza automáticamente cada archivo de log nuevo que aparezca.
+- **Reglas Sigma extensibles**: cualquier `.yml` que se agregue a `sigma_rules/` se carga automáticamente, sin tocar código.
+- **Modo demo sin archivos externos**: genera un escenario sintético de brute force + escalada + movimiento lateral y corre el pipeline completo sobre eso.
 
----
+## Requisitos
 
-## What it does
+- Python **3.11+** (probado en este repo con 3.14.6 sobre Windows).
+- Variable de entorno opcional: **`GEMINI_API_KEY`** (Google AI Studio, tiene tier gratuito) — solo necesaria para el análisis con IA. Sin ella, todo lo demás (Sigma, umbrales, ML, reportes) funciona igual.
 
-SOC-Lite ingests log files (JSON, JSONL, Windows Event Log) and runs them through a **three-layer detection pipeline**: Sigma-style rule matching, threshold-based behavioral detection, and ML anomaly detection (IsolationForest). Suspicious activity is escalated to **Google Gemini** for incident triage and analyst recommendations.
-
-```bash
-soclite analyze /var/log/auth.log --format syslog
-soclite analyze security.jsonl --format json --ai
-soclite monitor /var/log/  --watch --interval 30
-```
-
----
-
-## Detection Layers
-
-### Layer 1 — Sigma Rules
-YAML-based detection rules covering common attack patterns. Rules ship with the tool and are evaluated against every ingested event.
-
-| Rule Category | Examples |
-|---|---|
-| Credential Access | Mimikatz keywords, LSASS access, credential dumping |
-| Lateral Movement | PsExec, WMI remote execution, admin share access |
-| Persistence | New scheduled task, Run key modification, new service |
-| Defense Evasion | Log clearing (Event ID 1102/104), AMSI bypass strings |
-| Privilege Escalation | Token impersonation, UAC bypass patterns |
-| C2 Communication | PowerShell download cradles, Certutil abuse |
-
-### Layer 2 — Threshold Detection
-Sliding-window behavioral rules with configurable thresholds:
-
-| Rule | Default Threshold | Window |
-|---|---|---|
-| `brute_force_ip` | ≥ 10 failures from same IP | 5 min |
-| `account_enum` | ≥ 20 unique users | 10 min |
-| `credential_stuffing` | ≥ 5 IPs, ≥ 50 failures | 10 min |
-| `lateral_movement` | ≥ 3 hosts, admin ports | 15 min |
-| `after_hours_login` | Success outside 08:00–20:00 | — |
-| `process_burst` | ≥ 50 new processes | 1 min |
-| `repeated_priv_esc` | ≥ 3 privilege events | 5 min |
-
-### Layer 3 — ML Anomaly Detection
-`IsolationForest` trained on baseline log patterns. Flags statistical outliers in:
-- Login frequency per user/IP
-- Process creation rates
-- Network connection patterns
-- Time-of-day access distribution
-
----
-
-## Features
-
-- **Multi-format ingestion** — JSONL, JSON arrays, ECS, CloudTrail, Azure AD logs, syslog
-- **Auto-field detection** — dot-notation field lookup handles arbitrary log schemas
-- **Three detection layers** — rules + thresholds + ML, all independent
-- **Real-time monitoring** — `--watch` mode with configurable polling interval
-- **AI incident triage** — Gemini correlates alerts into incidents with priority and recommended actions
-- **Rich terminal dashboard** — live alert table, severity counters, incident panels
-- **HTML/PDF reports** — professional dark-theme report with incident timeline
-
----
-
-## Installation
+## Instalación
 
 ```bash
-git clone https://github.com/jmsdev83/soclite
 cd soclite
+python -m venv .venv
+source .venv/Scripts/activate      # Windows: .venv\Scripts\activate
 pip install -e .
 
 cp .env.example .env
-# Add GEMINI_API_KEY to .env (optional)
+# editar .env y completar GEMINI_API_KEY (opcional, solo para análisis IA)
 ```
 
----
+Instalación verificada localmente: `pip install -e .` resuelve sin conflictos (typer, rich, scikit-learn, numpy, python-evtx, pyyaml, python-dotenv, watchdog, google-generativeai, jinja2).
 
-## Usage
+## Uso
 
 ```bash
-# Analyze a log file
-soclite analyze auth.jsonl
+# Demo con logs sintéticos, sin necesitar archivos ni API key
+soclite demo --no-ai
 
-# Analyze with AI triage
-soclite analyze auth.jsonl --ai
-
-# Watch a directory for new events (real-time mode)
-soclite monitor /var/log/ --watch --interval 30
-
-# Generate HTML report
-soclite report alerts.json --output report.html
-
-# Run detection against specific log types
-soclite analyze events.evtx --format evtx --ai
-
-# List loaded Sigma rules
+# Ver las reglas Sigma cargadas
 soclite rules
 
-# Test a single log line against all rules
-soclite test '{"event_type":"login","user":"admin","ip":"192.168.1.5","status":"failed"}'
+# Analizar un log real, sin IA ni ML (rápido)
+soclite analyze sample_logs/demo_auth.log --no-ai --no-ml
+
+# Análisis completo (Sigma + umbrales + ML + IA si hay API key) con salida JSON
+soclite analyze sample_logs/demo_auth.log --output report.json
+
+# Analizar un .evtx de un CTF (CyberDefenders, Blue Team Labs Online)
+soclite analyze Security.evtx --no-ml
+
+# Generar reporte HTML
+soclite report sample_logs/demo_auth.log --no-ai -o soclite-report.html
+
+# Monitorear un directorio y analizar cada log nuevo automáticamente
+soclite watch /var/log --pattern "*.log"
 ```
 
----
+Flags principales de `analyze`: `--sigma-dir` (reglas custom), `--no-ai`, `--no-ml`, `--analyze-alerts` (narrativa IA por alerta, no solo por incidente), `--output/-o`, `--ml-sensitivity` (contamination del Isolation Forest, 0.01–0.20), `--quiet/-q`.
 
-## Architecture
-
-```
-soclite analyze <file>
-       │
-       ▼
-  LogIngestor          ← parse JSONL/JSON/syslog, normalize to LogEvent
-       │
-       ▼
-  DetectionPipeline    ← three parallel layers
-  ┌────┴────────────────────────────────────────────┐
-  │  SigmaEngine        ← YAML rule matching         │
-  │  ThresholdDetector  ← sliding-window behavioral  │
-  │  MLDetector         ← IsolationForest outliers   │
-  └────┬────────────────────────────────────────────┘
-       │
-       ▼
-  AlertAggregator      ← deduplicate, correlate, assign severity
-       │
-       ▼
-  GeminiAnalyzer       ← incident triage + analyst recommendations
-       │
-       ▼
-  Rich dashboard / HTML report
-```
-
----
-
-## Supported Log Formats
-
-| Format | Flag | Example Sources |
-|---|---|---|
-| JSON Lines | `--format json` | Suricata, Zeek, custom apps |
-| JSON Array | `--format json` | CloudTrail, Azure AD |
-| ECS | `--format json` | Elastic Stack |
-| Syslog | `--format syslog` | `/var/log/auth.log`, `/var/log/syslog` |
-| Windows EVTX | `--format evtx` | Windows Security/System logs |
-
----
-
-## Severity Levels
-
-| Level | Meaning | Alert Examples |
-|---|---|---|
-| 🔴 **CRITICAL** | Active compromise indicator | Mimikatz detected, LSASS dump |
-| 🟠 **HIGH** | Strong attack signal | Brute force success, lateral movement |
-| 🟡 **MEDIUM** | Suspicious activity | Multiple failed logins, after-hours access |
-| 🔵 **LOW** | Weak anomaly signal | ML outlier, unusual process count |
-| ⚪ **INFO** | Baseline deviation | Off-hours login, new user agent |
-
----
-
-## Project Structure
+## Estructura del proyecto
 
 ```
 soclite/
-├── soclite/
-│   ├── ingestors/
-│   │   ├── base.py             # BaseIngestor ABC
-│   │   ├── jsonlog.py          # JSON/JSONL/ECS/CloudTrail
-│   │   └── syslog.py           # Syslog format parser
-│   ├── detection/
-│   │   ├── sigma_engine.py     # YAML Sigma rule evaluator
-│   │   ├── threshold_detector.py # Sliding-window rules
-│   │   └── ml_detector.py      # IsolationForest anomaly detection
-│   ├── rules/                  # Built-in Sigma YAML rules
-│   │   ├── credential_access.yml
-│   │   ├── lateral_movement.yml
-│   │   ├── persistence.yml
-│   │   └── defense_evasion.yml
-│   ├── core/
-│   │   ├── pipeline.py         # Three-layer detection orchestration
-│   │   └── ai_analyzer.py      # Gemini incident triage
-│   ├── types/
-│   │   └── events.py           # LogEvent, Alert, Incident
-│   ├── report/
-│   │   ├── generator.py
-│   │   └── template.html
-│   └── cli/
-│       └── main.py
-└── pyproject.toml
+├── pyproject.toml
+├── .env.example
+├── sigma_rules/            # reglas Sigma (.yml), organizadas por categoría
+│   ├── auth/
+│   ├── privilege/
+│   └── windows/
+├── sample_logs/
+│   └── demo_auth.log
+└── soclite/
+    ├── types/events.py         # LogEvent, Alert, Incident, ScanResult
+    ├── ingestors/
+    │   ├── evtx.py             # parser de Windows EVTX
+    │   ├── authlog.py          # parser de auth.log/syslog Linux
+    │   └── jsonlog.py          # parser JSON/JSONL genérico
+    ├── detectors/
+    │   ├── sigma.py            # motor de reglas Sigma
+    │   └── ml_anomaly.py       # Isolation Forest
+    ├── detection/threshold_detector.py   # reglas de umbral hechas a mano
+    ├── core/
+    │   ├── pipeline.py         # orquesta ingest → detect → correlate → IA
+    │   ├── correlator.py       # agrupa alerts en incidents
+    │   └── ai_analyzer.py      # llamadas a Gemini
+    ├── report/
+    │   ├── generator.py        # HTML (Jinja2) + PDF (WeasyPrint opcional)
+    │   └── template.html
+    └── cli/main.py             # comandos: analyze, rules, demo, report, watch
 ```
 
----
+## Aviso legal
 
-## Environment Variables
-
-```env
-GEMINI_API_KEY=your-key-here      # AI incident triage (optional)
-SOC_RULES_DIR=/path/to/rules      # Custom Sigma rules directory
-SOC_BASELINE_HOURS=168            # Hours of baseline for ML (default 7 days)
-```
-
----
-
-## Portfolio
-
-| # | Category | Project | Status |
-|---|---|---|---|
-| P-01 | Offensive | ReconAI — Recon Orchestrator | ✅ |
-| P-02 | Offensive | WebHunter — OWASP Top 10 Scanner | ✅ |
-| P-03 | Offensive | PhishSim — Red Team Phishing | ✅ |
-| D-01 | Defensive | **SOC-Lite** ← you are here | ✅ |
-| D-02 | Defensive | ThreatFeed — CTI Aggregator | ✅ |
-| D-03 | Defensive | HoneyGrid — SSH/HTTP Honeypot | ✅ |
-| F-01 | Forensics | DFIR-Auto — Forensic Triage | ✅ |
-| F-02 | Forensics | MalwareScope — Malware Analyzer | ✅ |
-| F-03 | Forensics | PCAPForge — Network Forensics | ✅ |
-
----
+Proyecto educativo / de portfolio. Pensado para analizar logs propios, de laboratorios de práctica o de datasets públicos de CTF (CyberDefenders, Blue Team Labs Online, DFIR.training). No está pensado para producción sin revisión adicional, y el análisis de IA es asistivo — no reemplaza el criterio de un analista.
 
 <div align="center">
 
