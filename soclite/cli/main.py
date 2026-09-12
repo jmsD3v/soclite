@@ -33,7 +33,7 @@ load_dotenv()
 
 app = typer.Typer(
     name="soclite",
-    help="AI-powered lightweight SIEM — Sigma + ML + Claude.",
+    help="AI-powered lightweight SIEM — Sigma + ML + AI (Claude/Gemini/OpenAI).",
     add_completion=False,
 )
 console = Console()
@@ -42,7 +42,7 @@ console = Console()
 def _banner() -> None:
     console.print(
         Panel(
-            "[bold red]SOC-Lite[/bold red]  [bright_black]v0.1.0 — Sigma + ML + Claude[/bright_black]\n"
+            "[bold red]SOC-Lite[/bold red]  [bright_black]v0.1.0 — Sigma + ML + AI[/bright_black]\n"
             "[bright_black]D-01 — Defensive portfolio project[/bright_black]",
             border_style="bright_black",
             padding=(0, 2),
@@ -132,14 +132,14 @@ def _print_results(result) -> None:
 def analyze(
     files: list[Path] = typer.Argument(..., help="Log files to analyze (.evtx, auth.log, syslog)"),
     sigma_dir: Optional[Path] = typer.Option(None, "--sigma-dir", help="Custom Sigma rules directory"),
-    no_ai: bool = typer.Option(False, "--no-ai", help="Skip Claude AI analysis"),
+    no_ai: bool = typer.Option(False, "--no-ai", help="Skip AI analysis"),
     no_ml: bool = typer.Option(False, "--no-ml", help="Skip ML anomaly detection"),
     analyze_alerts: bool = typer.Option(False, "--analyze-alerts", help="Run AI on individual alerts too"),
     output: Optional[Path] = typer.Option(None, "--output", "-o", help="Save JSON report"),
     ml_sensitivity: float = typer.Option(0.05, "--ml-sensitivity", help="ML contamination 0.01–0.20"),
     quiet: bool = typer.Option(False, "--quiet", "-q"),
 ) -> None:
-    """Analyze log files with Sigma rules, ML anomaly detection, and Claude AI."""
+    """Analyze log files with Sigma rules, ML anomaly detection, and AI narratives."""
     if not quiet:
         _banner()
 

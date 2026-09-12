@@ -1,17 +1,17 @@
 # SOC-Lite
 
-SIEM liviano de línea de comandos (D-01) que combina reglas Sigma, detección por umbrales y un modelo de anomalías (Isolation Forest) para analizar logs de autenticación de Windows y Linux, y usa Gemini para redactar el análisis de cada incidente en lenguaje natural.
+SIEM liviano de línea de comandos (D-01) que combina reglas Sigma, detección por umbrales y un modelo de anomalías (Isolation Forest) para analizar logs de autenticación de Windows y Linux, y usa IA (Claude, Gemini u OpenAI, la que tengas configurada) para redactar el análisis de cada incidente en lenguaje natural.
 
 ## Qué hace
 
-SOC-Lite ingiere logs (`.evtx` de Windows, `auth.log`/`secure` de Linux, o JSON/JSONL de Docker/K8s/CloudTrail), los normaliza a un esquema común (`LogEvent`) y los corre en paralelo por tres motores de detección: un motor de reglas Sigma (subset propio del formato: `contains`, `startswith`, `endswith`, `contains|all`, `and`/`or`/`not`, `count()` por ventana de tiempo), un detector de umbrales hecho a mano (fuerza bruta, enumeración de cuentas, credential stuffing, movimiento lateral, logins fuera de horario, ráfagas de procesos, escalada de privilegios repetida) y un Isolation Forest de scikit-learn entrenado on-the-fly sobre 10 features por evento (hora del día, tipo de logon, IP privada/pública, proceso sospechoso, etc.). Las alertas resultantes se correlacionan en incidentes (mismo host/usuario/IP dentro de una ventana de 30 min) y, si hay una API key de Gemini configurada, cada incidente recibe un resumen narrativo (qué pasó, ruta de ataque probable, impacto, acciones recomendadas) generado por IA. Todo corre 100% local salvo la llamada a Gemini, que es opcional y se puede desactivar con `--no-ai`.
+SOC-Lite ingiere logs (`.evtx` de Windows, `auth.log`/`secure` de Linux, o JSON/JSONL de Docker/K8s/CloudTrail), los normaliza a un esquema común (`LogEvent`) y los corre en paralelo por tres motores de detección: un motor de reglas Sigma (subset propio del formato: `contains`, `startswith`, `endswith`, `contains|all`, `and`/`or`/`not`, `count()` por ventana de tiempo), un detector de umbrales hecho a mano (fuerza bruta, enumeración de cuentas, credential stuffing, movimiento lateral, logins fuera de horario, ráfagas de procesos, escalada de privilegios repetida) y un Isolation Forest de scikit-learn entrenado on-the-fly sobre 10 features por evento (hora del día, tipo de logon, IP privada/pública, proceso sospechoso, etc.). Las alertas resultantes se correlacionan en incidentes (mismo host/usuario/IP dentro de una ventana de 30 min) y, si hay alguna API key de IA configurada, cada incidente recibe un resumen narrativo (qué pasó, ruta de ataque probable, impacto, acciones recomendadas) generado por IA. Todo corre 100% local salvo la llamada al proveedor de IA, que es opcional y se puede desactivar con `--no-ai`.
 
 ## Características
 
 - **3 capas de detección independientes**: Sigma (7 reglas incluidas, cubren SSH brute force, sudo-to-root, audit log limpiado, tareas programadas, LOLBins), umbrales determinísticos, y ML no supervisado (Isolation Forest).
 - **3 ingestores**: EVTX de Windows (parseo XML directo, sin dependencias de Windows), auth.log/syslog de Linux, JSON/JSONL genérico con auto-detección de campos (ECS, CloudTrail, Docker).
 - **Correlación de incidentes**: agrupa alertas relacionadas por host/usuario/IP compartido dentro de una ventana temporal en vez de mostrar una lista plana.
-- **Análisis con IA (Gemini 1.5 Flash)**: narrativa de incidente + recomendaciones accionables; se puede correr también por alerta individual (`--analyze-alerts`). Si no hay `GEMINI_API_KEY`, el análisis se omite con un mensaje claro (no rompe el pipeline).
+- **Análisis con IA, sin atarse a un proveedor**: soporta Anthropic Claude, Google Gemini y OpenAI — usa automáticamente el que tenga API key configurada. Narrativa de incidente + recomendaciones accionables; se puede correr también por alerta individual (`--analyze-alerts`). Sin ninguna API key, el análisis se omite con un mensaje claro (no rompe el pipeline).
 - **Reportes HTML** (vía Jinja2) y PDF opcional (vía WeasyPrint, si está instalado).
 - **Modo `watch`**: monitorea un directorio y analiza automáticamente cada archivo de log nuevo que aparezca.
 - **Reglas Sigma extensibles**: cualquier `.yml` que se agregue a `sigma_rules/` se carga automáticamente, sin tocar código.
@@ -20,7 +20,7 @@ SOC-Lite ingiere logs (`.evtx` de Windows, `auth.log`/`secure` de Linux, o JSON/
 ## Requisitos
 
 - Python **3.11+** (probado en este repo con 3.14.6 sobre Windows).
-- Variable de entorno opcional: **`GEMINI_API_KEY`** (Google AI Studio, tiene tier gratuito) — solo necesaria para el análisis con IA. Sin ella, todo lo demás (Sigma, umbrales, ML, reportes) funciona igual.
+- Variable de entorno opcional para el análisis con IA — configurá **cualquiera de estas API keys**: `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` u `OPENAI_API_KEY`. Sin ninguna, todo lo demás (Sigma, umbrales, ML, reportes) funciona igual. Si configurás más de una, la prioridad es: **Anthropic > Gemini > OpenAI**.
 
 ## Instalación
 
@@ -31,10 +31,10 @@ source .venv/Scripts/activate      # Windows: .venv\Scripts\activate
 pip install -e .
 
 cp .env.example .env
-# editar .env y completar GEMINI_API_KEY (opcional, solo para análisis IA)
+# editar .env y completar UNA de: ANTHROPIC_API_KEY, GEMINI_API_KEY, OPENAI_API_KEY (opcional)
 ```
 
-Instalación verificada localmente: `pip install -e .` resuelve sin conflictos (typer, rich, scikit-learn, numpy, python-evtx, pyyaml, python-dotenv, watchdog, google-generativeai, jinja2).
+Instalación verificada localmente: `pip install -e .` resuelve sin conflictos (typer, rich, scikit-learn, numpy, python-evtx, pyyaml, python-dotenv, watchdog, google-generativeai, anthropic, openai, jinja2).
 
 ## Uso
 
@@ -88,7 +88,7 @@ soclite/
     ├── core/
     │   ├── pipeline.py         # orquesta ingest → detect → correlate → IA
     │   ├── correlator.py       # agrupa alerts en incidents
-    │   └── ai_analyzer.py      # llamadas a Gemini
+    │   └── ai_analyzer.py      # llamadas a Claude/Gemini/OpenAI, auto-detección por API key
     ├── report/
     │   ├── generator.py        # HTML (Jinja2) + PDF (WeasyPrint opcional)
     │   └── template.html

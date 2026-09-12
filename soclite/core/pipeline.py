@@ -148,7 +148,7 @@ async def run_pipeline(
 
         # AI analysis
         if use_ai and (incidents or all_alerts):
-            t_ai = progress.add_task("[purple]Claude AI analysis...", total=None)
+            t_ai = progress.add_task("[purple]AI analysis...", total=None)
             from soclite.core.ai_analyzer import analyze_all
             await analyze_all(result, analyze_alerts=analyze_alerts)
             progress.update(t_ai, description="[green]AI analysis complete", completed=1, total=1)
